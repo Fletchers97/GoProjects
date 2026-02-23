@@ -42,6 +42,8 @@ func fetchPrice(apiUrl string, symbol string, interval int, alertThreshold float
 	var lastPrice float64
 
 	for {
+		log.Printf("[DEBUG] [%s] Sending request to: %s", symbol, url)
+
 		resp, err := http.Get(url)
 		if err != nil {
 			log.Printf("[ERROR] [%s] Connection error: %v", symbol, err)
@@ -107,8 +109,8 @@ func main() {
 
 	config, err := loadConfig("config.json")
 	if err != nil {
-		log.Printf("[FATAL] %v", err)
 		fmt.Printf("[FATAL] %v\n", err)
+		log.Fatalf("[FATAL] Configuration failed: %v", err)
 		return
 	}
 
