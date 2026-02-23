@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -20,18 +22,23 @@ func fetchPrice(symbol string, stream chan string) {
 	for {
 		resp, err := http.Get(url)
 		if err != nil {
-			stream <- fmt.Sprintf("ERROR [%s]: %v", symbol, err)
+			log.Printf("[ERROR] [%s] Network issue: %v", symbol, err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
 
 		var result PriceResponse
-		json.NewDecoder(resp.Body).Decode(&result)
+		err = json.NewDecoder(resp.Body).Decode(&result)
 		resp.Body.Close()
+
+		if err != nil {
+			log.Printf("[WARNING] [%s] Could not decode JSON: %v", symbol, err)
+			continue
+		}
 
 		currentPrice, err := strconv.ParseFloat(result.Price, 64)
 		if err != nil {
-			stream <- fmt.Sprintf("[%s] Error parsing price for %s: %v", time.Now().Format("15:04:05"), result.Symbol, err)
+			log.Printf("[ERROR] [%s] Price conversion failed: %v", symbol, err)
 			time.Sleep(5 * time.Second)
 			continue
 		}
@@ -49,11 +56,9 @@ func fetchPrice(symbol string, stream chan string) {
 		} else {
 			status = "INITIAL PRICE"
 		}
-		stream <- fmt.Sprintf("[%s] %-9s | Price: $%10.2f | %s",
-			time.Now().Format("15:04:05"),
-			result.Symbol,
-			currentPrice,
-			status)
+		msg := fmt.Sprintf("%-9s | $%10.2f | %s", result.Symbol, currentPrice, status)
+		log.Printf("[INFO] %s", msg) // Write to log with timestamp
+		stream <- msg
 
 		lastPrice = currentPrice
 		time.Sleep(3 * time.Second)
@@ -61,7 +66,20 @@ func fetchPrice(symbol string, stream chan string) {
 }
 
 func main() {
-	fmt.Println("Crypto Monitor: Goroutines version with Text Alerts")
+	// Create or open the log file for appending
+	// os.O_APPEND — add information to the end, os.O_CREATE — create if it doesn't exist, os.O_WRONLY — write only
+	file, err := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		fmt.Println("Could not open log file:", err)
+		return
+	}
+	defer file.Close()
+
+	// Setting up the logger to write to both a file and  console
+	log.SetOutput(file)
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	fmt.Println("Monitor started. Logs are being saved to app.log")
 
 	dataChannel := make(chan string)
 
@@ -71,7 +89,7 @@ func main() {
 		go fetchPrice(s, dataChannel)
 	}
 
-	for massage := range dataChannel {
-		fmt.Println(massage)
+	for message := range dataChannel {
+		fmt.Printf("[%s] %s\n", time.Now().Format("15:04:05"), message)
 	}
 }
