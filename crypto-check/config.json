@@ -1,0 +1,5 @@
+{
+    "api_url": "https://api.binance.com/api/v3/ticker/price?symbol=",
+    "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "DOGEUSDT"],
+    "update_interval": 5
+}
