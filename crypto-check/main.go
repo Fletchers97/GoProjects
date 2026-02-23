@@ -14,6 +14,7 @@ type Config struct {
 	ApiUrl         string   `json:"api_url"`
 	Symbols        []string `json:"symbols"`
 	UpdateInterval int      `json:"update_interval"`
+	AlertThreshold float64  `json:"alert_threshold"`
 }
 
 type PriceResponse struct {
@@ -36,7 +37,7 @@ func loadConfig(fileName string) (Config, error) {
 	return config, nil
 }
 
-func fetchPrice(apiUrl string, symbol string, interval int, stream chan string) {
+func fetchPrice(apiUrl string, symbol string, interval int, alertThreshold float64, stream chan string) {
 	url := apiUrl + symbol
 	var lastPrice float64
 
@@ -68,6 +69,13 @@ func fetchPrice(apiUrl string, symbol string, interval int, stream chan string) 
 		status := "INITIAL"
 		if lastPrice != 0 {
 			diff := currentPrice - lastPrice
+			absDiff := diff
+			if absDiff < 0 {
+				absDiff = -absDiff
+			}
+			if absDiff >= alertThreshold {
+				log.Printf("[WARNING] [%s] VOLATILITY ALERT:Price changed by $%.2f (Threshold: $%.2f)", symbol, diff, alertThreshold)
+			}
 			if currentPrice > lastPrice {
 				status = fmt.Sprintf("UP (+$%.2f)", diff)
 			} else if currentPrice < lastPrice {
@@ -109,7 +117,7 @@ func main() {
 	dataChannel := make(chan string)
 
 	for _, s := range config.Symbols {
-		go fetchPrice(config.ApiUrl, s, config.UpdateInterval, dataChannel)
+		go fetchPrice(config.ApiUrl, s, config.UpdateInterval, config.AlertThreshold, dataChannel)
 	}
 
 	for message := range dataChannel {
