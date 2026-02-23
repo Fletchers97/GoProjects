@@ -5,7 +5,7 @@ This repository contains my practice projects in Golang, focused on building rob
 ## Projects
 
 ### Crypto-Check (Binance Monitor)
-A real-time cryptocurrency price monitor designed with industry-standard practices.
+A real-time cryptocurrency price monitor designed with standard practices.
 
 **Key Features:**
 * **High Concurrency:** Uses goroutines and channels to track multiple symbols simultaneously.
