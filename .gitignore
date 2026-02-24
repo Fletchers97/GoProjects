@@ -1,7 +1,4 @@
 *.db
 *.db-journal
-
 app.log
-
 *.exe
-crypto-check
