@@ -57,6 +57,8 @@ func fetchPrice(ctx context.Context, wg *sync.WaitGroup, db *sql.DB, apiUrl stri
 				log.Printf("[ERROR] [%s] Database insert error: %v", symbol, err)
 			}
 
+			analyzePrice(db, symbol, currentPrice)
+
 			status := "INITIAL"
 			if lastPrice != 0 {
 				diff := currentPrice - lastPrice
@@ -83,5 +85,31 @@ func fetchPrice(ctx context.Context, wg *sync.WaitGroup, db *sql.DB, apiUrl stri
 			lastPrice = currentPrice
 			time.Sleep(time.Duration(interval) * time.Second)
 		}
+	}
+}
+
+func analyzePrice(db *sql.DB, symbol string, currentPrice float64) {
+	// Get average price for the last hour
+	avgHour, err := getAveragePrice(db, symbol, 60)
+	if err != nil {
+		log.Printf("[ERROR] [%s] Failed to get average: %v", symbol, err)
+		return
+	}
+
+	if avgHour == 0 {
+		return // No data available for analysis
+	}
+
+	// Calculate deviation from average
+	diffPercent := ((currentPrice - avgHour) / avgHour) * 100
+
+	// Print current price, average, and deviation
+	fmt.Printf("[%s] Cur: $%.2f | Avg1h: $%.2f | Dev: %.2f%%\n",
+		symbol, currentPrice, avgHour, diffPercent)
+
+	// Alert if deviation exceeds 1% in either direction
+	if diffPercent > 1.0 || diffPercent < -1.0 {
+		log.Printf("[ALERT] [%s] Significant deviation from hourly average! Dev: %.2f%%",
+			symbol, diffPercent)
 	}
 }
