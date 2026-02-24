@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"sync"
+	"syscall"
 	"time"
 
 	_ "github.com/glebarez/go-sqlite"
@@ -46,7 +50,7 @@ func initDB(filepath string) (*sql.DB, error) {
 		return nil, err
 	}
 
-	// Создаем таблицу, если её еще нет
+	// Create table if it doesn't exist
 	query := `
 	CREATE TABLE IF NOT EXISTS price_history (
 		id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -63,73 +67,88 @@ func initDB(filepath string) (*sql.DB, error) {
 	return db, nil
 }
 
-func fetchPrice(db *sql.DB, apiUrl string, symbol string, interval int, alertThreshold float64, stream chan string) {
+func fetchPrice(ctx context.Context, wg *sync.WaitGroup, db *sql.DB, apiUrl string, symbol string, interval int, alertThreshold float64, stream chan string) {
+	defer wg.Done() // Ensure we signal when this goroutine is done
 	url := apiUrl + symbol
 	var lastPrice float64
 
 	for {
-		log.Printf("[DEBUG] [%s] Sending request to: %s", symbol, url)
+		select {
+		case <-ctx.Done():
+			log.Printf("[INFO] [%s] Stopping price fetcher", symbol)
+			return
+		default:
 
-		resp, err := http.Get(url)
-		if err != nil {
-			log.Printf("[ERROR] [%s] Connection error: %v", symbol, err)
-			time.Sleep(time.Duration(interval) * time.Second)
-			continue
-		}
+			log.Printf("[DEBUG] [%s] Sending request to: %s", symbol, url)
 
-		var result PriceResponse
-		err = json.NewDecoder(resp.Body).Decode(&result)
-		resp.Body.Close()
-
-		if err != nil {
-			log.Printf("[ERROR] [%s] JSON Decode error: %v", symbol, err)
-			time.Sleep(time.Duration(interval) * time.Second)
-			continue
-		}
-
-		currentPrice, err := strconv.ParseFloat(result.Price, 64)
-		if err != nil {
-			log.Printf("[ERROR] [%s] Price conversion error ('%s'): %v", symbol, result.Price, err)
-			time.Sleep(time.Duration(interval) * time.Second)
-			continue
-		}
-
-		// Save price to database
-		_, err = db.Exec("INSERT INTO price_history (symbol, price, timestamp) VALUES(?, ?, ?)",
-			symbol, currentPrice, time.Now())
-		if err != nil {
-			log.Printf("[ERROR] [%s] Database insert error: %v", symbol, err)
-		}
-
-		status := "INITIAL"
-		if lastPrice != 0 {
-			diff := currentPrice - lastPrice
-			absDiff := diff
-			if absDiff < 0 {
-				absDiff = -absDiff
+			resp, err := http.Get(url)
+			if err != nil {
+				log.Printf("[ERROR] [%s] Connection error: %v", symbol, err)
+				time.Sleep(time.Duration(interval) * time.Second)
+				continue
 			}
-			if absDiff >= alertThreshold {
-				log.Printf("[WARNING] [%s] VOLATILITY ALERT:Price changed by $%.2f (Threshold: $%.2f)", symbol, diff, alertThreshold)
+
+			var result PriceResponse
+			err = json.NewDecoder(resp.Body).Decode(&result)
+			resp.Body.Close()
+
+			if err != nil {
+				log.Printf("[ERROR] [%s] JSON Decode error: %v", symbol, err)
+				time.Sleep(time.Duration(interval) * time.Second)
+				continue
 			}
-			if currentPrice > lastPrice {
-				status = fmt.Sprintf("UP (+$%.2f)", diff)
-			} else if currentPrice < lastPrice {
-				status = fmt.Sprintf("DOWN (-$%.2f)", -diff)
-			} else {
-				status = "STABLE"
+
+			currentPrice, err := strconv.ParseFloat(result.Price, 64)
+			if err != nil {
+				log.Printf("[ERROR] [%s] Price conversion error ('%s'): %v", symbol, result.Price, err)
+				time.Sleep(time.Duration(interval) * time.Second)
+				continue
 			}
+
+			// Save price to database
+			_, err = db.Exec("INSERT INTO price_history (symbol, price, timestamp) VALUES(?, ?, ?)",
+				symbol, currentPrice, time.Now())
+			if err != nil {
+				log.Printf("[ERROR] [%s] Database insert error: %v", symbol, err)
+			}
+
+			status := "INITIAL"
+			if lastPrice != 0 {
+				diff := currentPrice - lastPrice
+				absDiff := diff
+				if absDiff < 0 {
+					absDiff = -absDiff
+				}
+				if absDiff >= alertThreshold {
+					log.Printf("[WARNING] [%s] VOLATILITY ALERT:Price changed by $%.2f (Threshold: $%.2f)", symbol, diff, alertThreshold)
+				}
+				if currentPrice > lastPrice {
+					status = fmt.Sprintf("UP (+$%.2f)", diff)
+				} else if currentPrice < lastPrice {
+					status = fmt.Sprintf("DOWN (-$%.2f)", -diff)
+				} else {
+					status = "STABLE"
+				}
+			}
+
+			msg := fmt.Sprintf("%-9s | $%10.2f | %s", result.Symbol, currentPrice, status)
+			log.Printf("[INFO] %s", msg)
+			stream <- msg
+
+			lastPrice = currentPrice
+			time.Sleep(time.Duration(interval) * time.Second)
 		}
-
-		msg := fmt.Sprintf("%-9s | $%10.2f | %s", result.Symbol, currentPrice, status)
-		log.Printf("[INFO] %s", msg)
-		stream <- msg
-
-		lastPrice = currentPrice
-		time.Sleep(time.Duration(interval) * time.Second)
 	}
 }
 
 func main() {
+	// Create a context that can be cancelled on interrupt signal
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Listen for interrupt signals to gracefully shutdown
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+
 	// Setting up logs BEFORE loading the config so that config errors are also logged
 	file, err := os.OpenFile("app.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -157,12 +176,25 @@ func main() {
 	fmt.Printf("Monitor started. Symbols: %v. Interval: %ds\n", config.Symbols, config.UpdateInterval)
 
 	dataChannel := make(chan string)
-
+	var wg sync.WaitGroup
 	for _, s := range config.Symbols {
-		go fetchPrice(db, config.ApiUrl, s, config.UpdateInterval, config.AlertThreshold, dataChannel)
+		wg.Add(1) // Increment WaitGroup counter for each goroutine
+		go fetchPrice(ctx, &wg, db, config.ApiUrl, s, config.UpdateInterval, config.AlertThreshold, dataChannel)
 	}
 
-	for message := range dataChannel {
-		fmt.Printf("[%s] %s\n", time.Now().Format("15:04:05"), message)
-	}
+	go func() {
+		for message := range dataChannel {
+			fmt.Printf("[%s] %s\n", time.Now().Format("15:04:05"), message)
+		}
+	}()
+
+	sig := <-sigChan
+	log.Printf("[INFO] Received signal: %v. Shutting down...", sig)
+	fmt.Printf("[INFO] Received signal: %v. Shutting down...\n", sig)
+	cancel()
+	wg.Wait() // Wait for all fetchPrice goroutines to finish
+	log.Println("[INFO] Shutdown complete.")
+	close(dataChannel)
+
+	fmt.Println("Program terminated gracefully. All data was saved\n.")
 }
