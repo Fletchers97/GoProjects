@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,6 +9,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	_ "github.com/glebarez/go-sqlite"
 )
 
 type Config struct {
@@ -37,7 +40,30 @@ func loadConfig(fileName string) (Config, error) {
 	return config, nil
 }
 
-func fetchPrice(apiUrl string, symbol string, interval int, alertThreshold float64, stream chan string) {
+func initDB(filepath string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite", filepath)
+	if err != nil {
+		return nil, err
+	}
+
+	// Создаем таблицу, если её еще нет
+	query := `
+	CREATE TABLE IF NOT EXISTS price_history (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		symbol TEXT,
+		price REAL,
+		timestamp DATETIME
+	);`
+
+	_, err = db.Exec(query)
+	if err != nil {
+		return nil, err
+	}
+
+	return db, nil
+}
+
+func fetchPrice(db *sql.DB, apiUrl string, symbol string, interval int, alertThreshold float64, stream chan string) {
 	url := apiUrl + symbol
 	var lastPrice float64
 
@@ -66,6 +92,13 @@ func fetchPrice(apiUrl string, symbol string, interval int, alertThreshold float
 			log.Printf("[ERROR] [%s] Price conversion error ('%s'): %v", symbol, result.Price, err)
 			time.Sleep(time.Duration(interval) * time.Second)
 			continue
+		}
+
+		// Save price to database
+		_, err = db.Exec("INSERT INTO price_history (symbol, price, timestamp) VALUES(?, ?, ?)",
+			symbol, currentPrice, time.Now())
+		if err != nil {
+			log.Printf("[ERROR] [%s] Database insert error: %v", symbol, err)
 		}
 
 		status := "INITIAL"
@@ -107,6 +140,13 @@ func main() {
 	log.SetOutput(file)
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
+	db, err := initDB("crypto.db")
+	if err != nil {
+		log.Fatalf("[FATAL] Database initialization failed: %v", err)
+		return
+	}
+	defer db.Close()
+
 	config, err := loadConfig("config.json")
 	if err != nil {
 		fmt.Printf("[FATAL] %v\n", err)
@@ -119,7 +159,7 @@ func main() {
 	dataChannel := make(chan string)
 
 	for _, s := range config.Symbols {
-		go fetchPrice(config.ApiUrl, s, config.UpdateInterval, config.AlertThreshold, dataChannel)
+		go fetchPrice(db, config.ApiUrl, s, config.UpdateInterval, config.AlertThreshold, dataChannel)
 	}
 
 	for message := range dataChannel {
