@@ -47,6 +47,8 @@ func main() {
 
 	fmt.Printf("Monitor started. Symbols: %v. Interval: %ds\n", config.Symbols, config.UpdateInterval)
 
+	go StartServer(db, ":8080")
+
 	dataChannel := make(chan string)
 	var wg sync.WaitGroup
 	for _, s := range config.Symbols {

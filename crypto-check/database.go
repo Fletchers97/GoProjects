@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 
 	_ "github.com/glebarez/go-sqlite"
 )
@@ -46,4 +47,37 @@ func getAveragePrice(db *sql.DB, symbol string, minutes int) (float64, error) {
 	}
 
 	return avgPrice.Float64, nil
+}
+
+func getLatestStats(db *sql.DB) ([]CoinStats, error) {
+
+	query := `
+        SELECT 
+            t1.symbol, 
+            t1.price,
+            (SELECT AVG(price) FROM price_history 
+             WHERE symbol = t1.symbol AND timestamp > datetime('now', '-100 hours')) as avg_price
+        FROM price_history t1
+        WHERE t1.id IN (SELECT MAX(id) FROM price_history GROUP BY symbol)`
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var stats []CoinStats
+	for rows.Next() {
+		var s CoinStats
+		var avg sql.NullFloat64
+		if err := rows.Scan(&s.Symbol, &s.Price, &avg); err != nil {
+			log.Printf("[ERROR] Scan error: %v", err)
+			continue
+		}
+		if avg.Valid {
+			s.AvgPrice = avg.Float64
+		}
+		stats = append(stats, s)
+	}
+	return stats, nil
 }
