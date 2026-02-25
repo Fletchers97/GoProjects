@@ -58,7 +58,8 @@ func getLatestStats(db *sql.DB) ([]CoinStats, error) {
             (SELECT AVG(price) FROM price_history 
              WHERE symbol = t1.symbol AND timestamp > datetime('now', '-100 hours')) as avg_price
         FROM price_history t1
-        WHERE t1.id IN (SELECT MAX(id) FROM price_history GROUP BY symbol)`
+        WHERE t1.id IN (SELECT MAX(id) FROM price_history GROUP BY symbol)
+		ORDER BY t1.symbol ASC`
 
 	rows, err := db.Query(query)
 	if err != nil {
