@@ -23,23 +23,46 @@ A real-time cryptocurrency price monitor designed with standard practices. This 
 * **Smart Logging:** Implements a full logging hierarchy (DEBUG, INFO, ERROR) with console and file output.
 * **External Configuration:** Fully driven by a `config.json` file for flexible symbol management and intervals.
 * **Frontend-Backend Sync:** Uses JavaScript **Fetch API** to asynchronously bridge the Go backend with the user interface.
+* **Dockerized:** Fully containerized environment for consistent deployment across any system (Windows, Mac, Linux).
 
 ### Tech Stack
 
 * **Language:** Golang (Concurrency, Context, `net/http`)
 * **Database:** SQLite (SQL, Time-series data analytics)
 * **Frontend:** HTML5, CSS3 (Modern UI), JavaScript (ES6 Fetch API)
+* **Containerization:** Docker (Multi-stage builds)
 * **API:** Binance Public REST API
 * **Architecture:** Modular Data-driven design / RESTful service
 
 ---
 
-## Roadmap
+## 🐳 Running with Docker
 
-- [x] Concurrent price fetching
-- [x] JSON Configuration system
-- [x] Multi-level logging & Alerts
-- [x] SQLite database integration & Analytics
-- [x] **REST API & Live Web Dashboard**
-- [ ] Telegram Bot notifications
-- [ ] Docker containerization
+The project is fully containerized.
+
+1. **Build :**
+  ```bash
+   docker build -t crypto-app .
+2. **Run the container :**
+  ```bash
+   docker run -p 8080:8080 crypto-app
+3. **Access the dashboard :**
+  Open http://localhost:8080 in your browser.
+
+### Roadmap
+
+[x] Concurrent price fetching
+
+[x] JSON Configuration system
+
+[x] Multi-level logging & Alerts
+
+[x] SQLite database integration & Analytics
+
+[x] REST API & Live Web Dashboard
+
+[x] Docker containerization
+
+[ ] Unit testing for core logic
+
+[ ] gRPC interface implementation
