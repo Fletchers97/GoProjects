@@ -33,6 +33,7 @@ A real-time cryptocurrency price monitor designed with standard practices. This 
 * **Containerization:** Docker (Multi-stage builds)
 * **API:** Binance Public REST API
 * **Architecture:** Modular Data-driven design / RESTful service
+* **Automated Testing:** Implements **Table Driven Tests** for core logic, price calculations, and JSON validation with code coverage reporting.
 
 ---
 
@@ -61,6 +62,6 @@ Open http://localhost:8080 in your browser.
 
 [x] Docker containerization
 
-[ ] Unit testing for core logic
+[x] Unit testing (Table-driven approach)
 
 [ ] gRPC interface implementation
