@@ -10,9 +10,11 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"crypto-check/pb"
 )
 
-func fetchPrice(ctx context.Context, wg *sync.WaitGroup, db *sql.DB, apiUrl string, symbol string, interval int, alertThreshold float64, stream chan string) {
+func fetchPrice(ctx context.Context, wg *sync.WaitGroup, db *sql.DB, client pb.AnalyticsServiceClient, apiUrl string, symbol string, interval int, alertThreshold float64, stream chan string) {
 	defer wg.Done() // Ensure we signal when this goroutine is done
 	url := apiUrl + symbol
 	var lastPrice float64
@@ -59,6 +61,18 @@ func fetchPrice(ctx context.Context, wg *sync.WaitGroup, db *sql.DB, apiUrl stri
 
 			analyzePrice(db, symbol, currentPrice)
 
+			var rsiInfo string = "RSI: N/A"
+			analyticResp, err := client.GetRSI(ctx, &pb.AnalyticRequest{
+				Symbol: symbol,
+				Period: 14,
+			})
+
+			if err != nil {
+				log.Printf("[ERROR] [%s] gRPC Analytics error: %v", symbol, err)
+			} else {
+				rsiInfo = fmt.Sprintf("RSI: %.2f (%s)", analyticResp.RsiValue, analyticResp.Status)
+			}
+
 			status := "INITIAL"
 			if lastPrice != 0 {
 				diff := currentPrice - lastPrice
@@ -78,7 +92,7 @@ func fetchPrice(ctx context.Context, wg *sync.WaitGroup, db *sql.DB, apiUrl stri
 				}
 			}
 
-			msg := fmt.Sprintf("%-9s | $%10.2f | %s", result.Symbol, currentPrice, status)
+			msg := fmt.Sprintf("%-9s | $%10.2f | %-15s | %s", result.Symbol, currentPrice, status, rsiInfo)
 			log.Printf("[INFO] %s", msg)
 			stream <- msg
 

@@ -10,7 +10,11 @@ import (
 	"syscall"
 	"time"
 
+	"crypto-check/pb"
+
 	_ "github.com/glebarez/go-sqlite"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -44,6 +48,15 @@ func main() {
 		log.Fatalf("[FATAL] Configuration failed: %v", err)
 		return
 	}
+	// grpc connection to Analytics Service
+	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatalf("[FATAL] Could not connect to Analytics: %v", err)
+	}
+	defer conn.Close()
+
+	// Создаем клиент, который будем передавать в горутины
+	analyticsClient := pb.NewAnalyticsServiceClient(conn)
 
 	fmt.Printf("Monitor started. Symbols: %v. Interval: %ds\n", config.Symbols, config.UpdateInterval)
 
@@ -53,7 +66,7 @@ func main() {
 	var wg sync.WaitGroup
 	for _, s := range config.Symbols {
 		wg.Add(1) // Increment WaitGroup counter for each goroutine
-		go fetchPrice(ctx, &wg, db, config.ApiUrl, s, config.UpdateInterval, config.AlertThreshold, dataChannel)
+		go fetchPrice(ctx, &wg, db, analyticsClient, config.ApiUrl, s, config.UpdateInterval, config.AlertThreshold, dataChannel)
 	}
 
 	go func() {
