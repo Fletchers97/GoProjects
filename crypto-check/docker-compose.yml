@@ -1,0 +1,22 @@
+services:
+  analytics:
+    build:
+      context: .
+      dockerfile: cmd/analytics/Dockerfile
+    volumes:
+      - .:/root  
+    restart: always
+
+  collector:
+    build:
+      context: .
+      dockerfile: cmd/collector/Dockerfile
+    depends_on:
+      - analytics
+    ports:
+      - "8080:8080"
+    volumes:
+      - .:/root  
+    environment:
+      - ANALYTICS_ADDR=analytics:50051 
+    restart: always

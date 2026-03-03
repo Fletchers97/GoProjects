@@ -2,5 +2,6 @@
     "api_url": "https://api.binance.com/api/v3/ticker/price?symbol=",
     "symbols": ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "DOGEUSDT"],
     "update_interval": 5,
-    "alert_threshold": 5.0
+    "alert_threshold": 5.0,
+    "analytics_addr": "analytics:50051"
 }

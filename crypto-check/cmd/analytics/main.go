@@ -20,6 +20,8 @@ type server struct {
 }
 
 func (s *server) GetRSI(ctx context.Context, req *pb.AnalyticRequest) (*pb.AnalyticResponse, error) {
+
+	log.Printf("[gRPC] Received a request for the symbol: %s", req.Symbol)
 	// We take the last 14 prices (ORDER BY timestamp DESC will give us the most recent ones on top)
 	query := `SELECT price FROM price_history WHERE symbol = ? ORDER BY timestamp DESC LIMIT ?`
 	rows, err := s.db.Query(query, req.Symbol, req.Period)

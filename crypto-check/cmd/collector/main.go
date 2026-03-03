@@ -49,13 +49,18 @@ func main() {
 		return
 	}
 	// grpc connection to Analytics Service
-	conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	addr := os.Getenv("ANALYTICS_ADDR")
+	if addr == "" {
+		addr = "localhost:50051"
+	}
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
-		log.Fatalf("[FATAL] Could not connect to Analytics: %v", err)
+		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
 
-	// Создаем клиент, который будем передавать в горутины
+	// Create a gRPC client for the Analytics Service
 	analyticsClient := pb.NewAnalyticsServiceClient(conn)
 
 	fmt.Printf("Monitor started. Symbols: %v. Interval: %ds\n", config.Symbols, config.UpdateInterval)
