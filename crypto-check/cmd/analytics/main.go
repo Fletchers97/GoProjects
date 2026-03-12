@@ -73,7 +73,7 @@ func (s *server) GetRSI(ctx context.Context, req *pb.AnalyticRequest) (*pb.Analy
 }
 
 func main() {
-	db, err := sql.Open("sqlite", "./crypto.db")
+	db, err := sql.Open("sqlite", "/root/crypto.db")
 	if err != nil {
 		log.Fatalf("Failed to connect to DB: %v", err)
 	}

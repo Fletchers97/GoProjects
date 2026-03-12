@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.11
 // 	protoc        v7.34.0
-// source: exchange.proto
+// source: proto/exchange.proto
 
 package pb
 
@@ -31,7 +31,7 @@ type AnalyticRequest struct {
 
 func (x *AnalyticRequest) Reset() {
 	*x = AnalyticRequest{}
-	mi := &file_exchange_proto_msgTypes[0]
+	mi := &file_proto_exchange_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *AnalyticRequest) String() string {
 func (*AnalyticRequest) ProtoMessage() {}
 
 func (x *AnalyticRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_exchange_proto_msgTypes[0]
+	mi := &file_proto_exchange_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *AnalyticRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnalyticRequest.ProtoReflect.Descriptor instead.
 func (*AnalyticRequest) Descriptor() ([]byte, []int) {
-	return file_exchange_proto_rawDescGZIP(), []int{0}
+	return file_proto_exchange_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *AnalyticRequest) GetSymbol() string {
@@ -85,7 +85,7 @@ type AnalyticResponse struct {
 
 func (x *AnalyticResponse) Reset() {
 	*x = AnalyticResponse{}
-	mi := &file_exchange_proto_msgTypes[1]
+	mi := &file_proto_exchange_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -97,7 +97,7 @@ func (x *AnalyticResponse) String() string {
 func (*AnalyticResponse) ProtoMessage() {}
 
 func (x *AnalyticResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_exchange_proto_msgTypes[1]
+	mi := &file_proto_exchange_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -110,7 +110,7 @@ func (x *AnalyticResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AnalyticResponse.ProtoReflect.Descriptor instead.
 func (*AnalyticResponse) Descriptor() ([]byte, []int) {
-	return file_exchange_proto_rawDescGZIP(), []int{1}
+	return file_proto_exchange_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *AnalyticResponse) GetSymbol() string {
@@ -141,11 +141,11 @@ func (x *AnalyticResponse) GetStatus() string {
 	return ""
 }
 
-var File_exchange_proto protoreflect.FileDescriptor
+var File_proto_exchange_proto protoreflect.FileDescriptor
 
-const file_exchange_proto_rawDesc = "" +
+const file_proto_exchange_proto_rawDesc = "" +
 	"\n" +
-	"\x0eexchange.proto\x12\x02pb\"A\n" +
+	"\x14proto/exchange.proto\x12\x02pb\"A\n" +
 	"\x0fAnalyticRequest\x12\x16\n" +
 	"\x06symbol\x18\x01 \x01(\tR\x06symbol\x12\x16\n" +
 	"\x06period\x18\x02 \x01(\x05R\x06period\"\x84\x01\n" +
@@ -158,23 +158,23 @@ const file_exchange_proto_rawDesc = "" +
 	"\x06GetRSI\x12\x13.pb.AnalyticRequest\x1a\x14.pb.AnalyticResponseB\x06Z\x04./pbb\x06proto3"
 
 var (
-	file_exchange_proto_rawDescOnce sync.Once
-	file_exchange_proto_rawDescData []byte
+	file_proto_exchange_proto_rawDescOnce sync.Once
+	file_proto_exchange_proto_rawDescData []byte
 )
 
-func file_exchange_proto_rawDescGZIP() []byte {
-	file_exchange_proto_rawDescOnce.Do(func() {
-		file_exchange_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_exchange_proto_rawDesc), len(file_exchange_proto_rawDesc)))
+func file_proto_exchange_proto_rawDescGZIP() []byte {
+	file_proto_exchange_proto_rawDescOnce.Do(func() {
+		file_proto_exchange_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_proto_exchange_proto_rawDesc), len(file_proto_exchange_proto_rawDesc)))
 	})
-	return file_exchange_proto_rawDescData
+	return file_proto_exchange_proto_rawDescData
 }
 
-var file_exchange_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_exchange_proto_goTypes = []any{
+var file_proto_exchange_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_exchange_proto_goTypes = []any{
 	(*AnalyticRequest)(nil),  // 0: pb.AnalyticRequest
 	(*AnalyticResponse)(nil), // 1: pb.AnalyticResponse
 }
-var file_exchange_proto_depIdxs = []int32{
+var file_proto_exchange_proto_depIdxs = []int32{
 	0, // 0: pb.AnalyticsService.GetRSI:input_type -> pb.AnalyticRequest
 	1, // 1: pb.AnalyticsService.GetRSI:output_type -> pb.AnalyticResponse
 	1, // [1:2] is the sub-list for method output_type
@@ -184,26 +184,26 @@ var file_exchange_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_exchange_proto_init() }
-func file_exchange_proto_init() {
-	if File_exchange_proto != nil {
+func init() { file_proto_exchange_proto_init() }
+func file_proto_exchange_proto_init() {
+	if File_proto_exchange_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_exchange_proto_rawDesc), len(file_exchange_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_exchange_proto_rawDesc), len(file_proto_exchange_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_exchange_proto_goTypes,
-		DependencyIndexes: file_exchange_proto_depIdxs,
-		MessageInfos:      file_exchange_proto_msgTypes,
+		GoTypes:           file_proto_exchange_proto_goTypes,
+		DependencyIndexes: file_proto_exchange_proto_depIdxs,
+		MessageInfos:      file_proto_exchange_proto_msgTypes,
 	}.Build()
-	File_exchange_proto = out.File
-	file_exchange_proto_goTypes = nil
-	file_exchange_proto_depIdxs = nil
+	File_proto_exchange_proto = out.File
+	file_proto_exchange_proto_goTypes = nil
+	file_proto_exchange_proto_depIdxs = nil
 }

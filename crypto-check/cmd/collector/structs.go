@@ -16,4 +16,5 @@ type CoinStats struct {
 	Symbol   string  `json:"symbol"`
 	Price    float64 `json:"current_price"`
 	AvgPrice float64 `json:"avg_price_1h"`
+	RSI      float64 `json:"rsi"`
 }

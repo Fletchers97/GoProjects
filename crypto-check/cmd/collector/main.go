@@ -65,7 +65,7 @@ func main() {
 
 	fmt.Printf("Monitor started. Symbols: %v. Interval: %ds\n", config.Symbols, config.UpdateInterval)
 
-	go StartServer(db, ":8080")
+	go StartServer(db, analyticsClient, ":8080")
 
 	dataChannel := make(chan string)
 	var wg sync.WaitGroup

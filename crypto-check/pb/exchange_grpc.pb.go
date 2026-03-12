@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v7.34.0
-// source: exchange.proto
+// source: proto/exchange.proto
 
 package pb
 
@@ -117,5 +117,5 @@ var AnalyticsService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "exchange.proto",
+	Metadata: "proto/exchange.proto",
 }

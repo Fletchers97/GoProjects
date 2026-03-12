@@ -9,7 +9,7 @@ import (
 )
 
 func initDB(filepath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", filepath)
+	db, err := sql.Open("sqlite", "/root/crypto.db")
 	if err != nil {
 		return nil, err
 	}

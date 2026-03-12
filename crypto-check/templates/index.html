@@ -23,7 +23,7 @@
         .avg-label { font-size: 0.8rem; color: var(--text-dim); display: block; }
         .avg-value { font-weight: 500; color: #10b981; }
         .footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); width: 100%; display: flex; justify-content: space-between; color: var(--text-dim); font-size: 0.8rem; }
-        /* Эффект при обновлении цены */
+        
         .price-up { color: #10b981 !important; }
         .price-down { color: #ef4444 !important; }
     </style>
@@ -45,6 +45,12 @@
     </div>
 
     <script>
+        function getRsiColor(rsi) {
+            if (!rsi) return '#94a3b8'; // Grey for loading state
+            if (rsi >= 70) return '#ef4444'; // Red
+            if (rsi <= 30) return '#10b981'; // Green
+            return '#38bdf8'; // Blue (Neutral)
+        }
         async function updateStats() {
             try {
                 const response = await fetch('/api/stats');
@@ -52,7 +58,7 @@
                 const container = document.getElementById('dashboard');
                 const timeSpan = document.getElementById('time');
                 
-                container.innerHTML = ''; // Очищаем старое
+                container.innerHTML = ''; 
                 
                 data.forEach(coin => {
                     const card = document.createElement('div');
@@ -60,10 +66,19 @@
                     card.innerHTML = `
                         <span class="symbol">${coin.symbol}</span>
                         <div class="price" id="price-${coin.symbol}">$${coin.current_price.toLocaleString()}</div>
+    
+                        <div style="margin-bottom: 12px; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 8px;">
+                            <span class="avg-label">RSI (14)</span>
+                            <span class="rsi-value" style="font-size: 1.2rem; font-weight: 700; color: ${getRsiColor(coin.rsi)}">
+                                ${coin.rsi ? coin.rsi.toFixed(2) : 'CALCING...'}
+                            </span>
+                        </div>
+
                         <div>
                             <span class="avg-label">1H ROLLING AVERAGE</span>
                             <span class="avg-value">$${coin.avg_price_1h.toLocaleString()}</span>
                         </div>
+                    
                     `;
                     container.appendChild(card);
                 });
